@@ -11,7 +11,15 @@ Aplicación Android nativa en Kotlin, Jetpack Compose y Room. Organiza citas y n
 5. Busca por referencia, contenido, autor o nota personal; la búsqueda ignora mayúsculas y tildes. Combina tipo y favoritos.
 6. Las eliminaciones requieren confirmación. Eliminar un tema borra sus recursos en una sola transacción.
 
-El texto bíblico se introduce manualmente: no hay descarga automática ni una traducción bíblica incorporada. No se incluyen citas de ejemplo atribuidas sin verificar.
+## Citas bíblicas online
+
+En un recurso de tipo **Biblia**, escribe una referencia como `Mt 5,4` o `1 Co 13,4-7` y pulsa **Buscar texto online**. Notcatg abre el buscador público de https://bdj.alpichel.com/libros y recupera los versículos solicitados. No usa una API privada ni descarga una Biblia completa. Se admiten citas de un capítulo, con un máximo de 20 versículos.
+
+La respuesta debe coincidir en libro y capítulo y contener todos los versículos solicitados. Si la consulta falla, no se guarda texto incompleto ni se sustituye por otra traducción. El formulario permite revisar el contenido y pulsar **Guardar**: texto y atribución se conservan en Room y se leen después sin internet. El botón online se desactiva si ya hay texto, para evitar sobrescribir una cita manual.
+
+La numeración es la del proveedor: en la edición consultada, «Bienaventurados los mansos» es Mt 5,4. La página se presenta como Biblia de Jerusalén; no hemos verificado qué edición impresa específica utiliza. La consulta depende de su buscador y del WebView de Android; puede fallar si el sitio cambia o deja de responder. Hay un tiempo máximo de 30 segundos y opción de cerrar. La consulta online requiere internet; la consulta de recursos guardados no.
+
+La prueba del buscador se realizó en navegador. Está pendiente comprobar el flujo completo en un dispositivo Android real.
 
 ## Compilación
 

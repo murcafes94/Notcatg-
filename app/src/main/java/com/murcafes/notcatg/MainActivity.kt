@@ -237,6 +237,8 @@ fun TopicDialog(original: Topic?, saving: Boolean, onDismiss: () -> Unit, onSave
 
 @Composable
 fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, onSave: (Resource) -> Unit) {
+    var lookup by remember { mutableStateOf<BibleReference?>(null) }
+    var lookupMessage by remember { mutableStateOf("") }
     var type by rememberSaveable(original?.id) { mutableStateOf(original?.type ?: "Biblia") }
     var reference by rememberSaveable(original?.id) { mutableStateOf(original?.reference ?: "") }
     var body by rememberSaveable(original?.id) { mutableStateOf(original?.text ?: "") }
@@ -251,6 +253,17 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
                     FilterChip(selected = type == item, enabled = !saving, onClick = { type = item }, label = { Text(item) })
                 }
                 OutlinedTextField(reference, { reference = it }, label = { Text("Referencia o título · ej. Mt 5,5") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
+                if (type == "Biblia") {
+                    TextButton(enabled = !saving && reference.isNotBlank() && body.isBlank(), onClick = {
+                        lookup = BibleReference.parse(reference)
+                        lookupMessage = if (lookup == null) "Usa una referencia como Mt 5,4 o 1 Co 13,4-7 (hasta 20 versículos del mismo capítulo)." else ""
+                    }) { Text("Buscar texto online") }
+                    Text("Fuente: Biblia de Jerusalén · bdj.alpichel.com. El texto quedará disponible sin conexión al guardar.",
+                        style = MaterialTheme.typography.bodySmall)
+                    if (body.isNotBlank()) Text("Para consultar otra cita, vacía primero el texto. Se conserva el contenido actual.",
+                        style = MaterialTheme.typography.bodySmall)
+                    if (lookupMessage.isNotBlank()) Text(lookupMessage)
+                }
                 OutlinedTextField(body, { body = it }, label = { Text("Texto / descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3, enabled = !saving)
                 OutlinedTextField(source, { source = it }, label = { Text("Fuente / autor / edición") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
                 OutlinedTextField(note, { note = it }, label = { Text("Nota personal") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
@@ -262,6 +275,14 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
                 personalNote = note.trim(), updatedAt = System.currentTimeMillis()))
         }) { Text(if (saving) "Guardando…" else "Guardar") } },
         dismissButton = { TextButton(enabled = !saving, onClick = onDismiss) { Text("Cancelar") } })
+    lookup?.let { request ->
+        BibleLookupDialog(request, onDismiss = { lookup = null }) { text, attribution ->
+            body = text
+            source = attribution
+            lookup = null
+            lookupMessage = "Texto recuperado. Pulsa Guardar para conservar la cita sin conexión."
+        }
+    }
 }
 
 @Composable
