@@ -12,7 +12,6 @@ abstract class AppDatabase: RoomDatabase() {
   @Volatile private var INSTANCE: AppDatabase? = null
   fun get(context: Context): AppDatabase = INSTANCE ?: synchronized(this) {
    Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "notcatg.db")
-    .fallbackToDestructiveMigration()
     .build().also { INSTANCE=it }
   }
  }

@@ -2,6 +2,8 @@ name: Compilar APK
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 jobs:
   build:
@@ -15,9 +17,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Compilar APK debug
-        run: gradle :app:assembleDebug
+      - name: Probar, revisar y compilar APK debug
+        run: gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: apk-notcatg-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

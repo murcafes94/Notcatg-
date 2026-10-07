@@ -27,4 +27,10 @@ interface NoteDao {
 
  @Query("DELETE FROM resources WHERE topicId = :topicId")
  suspend fun deleteResourcesForTopic(topicId: Long)
+
+ @Transaction
+ suspend fun deleteTopicWithResources(topic: Topic) {
+  deleteResourcesForTopic(topic.id)
+  deleteTopic(topic)
+ }
 }
