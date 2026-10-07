@@ -3,6 +3,8 @@ package com.murcafes.notcatg
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -69,7 +71,7 @@ fun BackupDialog(dao: NoteDao, onDismiss: () -> Unit) {
     }
     AlertDialog(onDismissRequest = { if (!busy) onDismiss() }, title = { Text("Copias de seguridad") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Guarda temas, citas, fuentes, notas y favoritos en un archivo. En el selector de Android, elige Google Drive o una carpeta del dispositivo.")
                 Text("Para usar Drive, su aplicación debe estar instalada y configurada. Esta copia es manual; no se crea automáticamente.", style = MaterialTheme.typography.bodySmall)
                 Button(enabled = !busy, modifier = Modifier.fillMaxWidth(), onClick = {
