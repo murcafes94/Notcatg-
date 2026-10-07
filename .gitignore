@@ -8,3 +8,6 @@ build/
 captures/
 .externalNativeBuild/
 .cxx/
+
+# User-supplied Bible is bundled only in the personal APK.
+app/src/main/assets/navarra.epub

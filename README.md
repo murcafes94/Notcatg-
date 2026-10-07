@@ -13,13 +13,13 @@ Aplicación Android nativa en Kotlin, Jetpack Compose y Room. Organiza citas y n
 
 ## Biblia de Navarra sin conexión
 
-La consulta web se ha retirado. En un recurso de tipo **Biblia**, pulsa **Importar EPUB de Navarra** y selecciona una vez el archivo `Sagrada Biblia [Castellano] (Ed. Univ. de Navarra).epub`. La app prepara un índice SQLite local con los 73 libros; no abre páginas web ni requiere internet para buscar. La importación se hace en segundo plano y una nueva importación solo sustituye el índice bíblico si se ha validado el archivo completo. La colección personal utiliza otra base y no se borra.
+La versión personal incluye el EPUB de Navarra en el APK. Al abrir una cita de tipo **Biblia**, prepara automáticamente un índice SQLite local con los 73 libros la primera vez. No hay que importar archivos ni conectarse a internet. La colección personal utiliza otra base y no se borra.
 
 Escribe `Mt 5,5`, `1 Co 13,4-7` o `Est 4,17a` y pulsa **Buscar cita en Navarra**. Se admite un máximo de 20 versículos del mismo capítulo y referencias individuales con letras. Se conserva la numeración que aparece en Navarra, incluidas sus alternativas y pasajes impresos con números conjuntos. Se recupera el texto bíblico, sin introducir encabezados, números de capítulo ni comentarios editoriales. Pulsa **Guardar** para conservarlo junto con la atribución dentro del tema. No sobrescribe el texto que ya escribiste.
 
-El EPUB original se importa en el dispositivo del usuario; no se incluye en el repositorio público ni en el APK. Mantén una copia del EPUB para volver a importar la Biblia al cambiar de dispositivo. Los respaldos de tus notas incluyen el texto de las citas ya guardadas, aunque el EPUB no esté importado en el nuevo dispositivo. La importación es específica del formato revisado de Navarra, con límite de 25 MB; otros EPUB pueden no ser compatibles.
+El EPUB suministrado por el usuario se incorpora exclusivamente al APK personal como `assets/navarra.epub`; no se publica en este repositorio. Para una compilación personal desde Android Studio, colócalo en `app/src/main/assets/navarra.epub` antes de compilar. El APK genérico de Actions no contiene el texto completo: requiere el empaquetado personal antes de usar esta función. Los respaldos de notas incluyen los textos de las citas guardadas; no necesitan respaldar el índice bíblico que se vuelve a preparar automáticamente.
 
-La revisión local del EPUB proporcionado identificó 73 libros y 35.784 referencias, y comprobó referencias de Génesis, Mateo, 1 Corintios, Ester y Apocalipsis. Las pruebas del importador cubren continuación de párrafos, poesía, exclusión de encabezados, numeraciones alternativas y versículos con letras. Está pendiente comprobar la importación y el uso completo en Android real.
+La revisión local del EPUB proporcionado identificó 73 libros y 35.784 referencias, y comprobó referencias de Génesis, Mateo, 1 Corintios, Ester y Apocalipsis. Las pruebas del importador cubren continuación de párrafos, poesía, exclusión de encabezados, numeraciones alternativas y versículos con letras. Está pendiente comprobar la preparación automática y el uso completo en Android real.
 
 ## Compilación
 

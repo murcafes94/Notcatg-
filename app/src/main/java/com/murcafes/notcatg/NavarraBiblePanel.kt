@@ -1,7 +1,5 @@
 package com.murcafes.notcatg
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,7 +11,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 @Composable
 fun NavarraBiblePanel(reference: String, enabled: Boolean, onResult: (String, String) -> Unit) {
@@ -24,46 +21,19 @@ fun NavarraBiblePanel(reference: String, enabled: Boolean, onResult: (String, St
     val scope = rememberCoroutineScope()
     var working by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
-    val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null && !working) {
-            working = true
-            message = "Preparando el índice de Navarra…"
-            scope.launch {
-                try {
-                    val imported = withContext(Dispatchers.IO) {
-                        val file = File.createTempFile("navarra-", ".epub", context.cacheDir)
-                        try {
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                file.outputStream().use { output ->
-                                    val buffer = ByteArray(8192)
-                                    var bytes = 0L
-                                    while (true) {
-                                        val size = input.read(buffer)
-                                        if (size == -1) break
-                                        bytes += size
-                                        require(bytes <= NavarraEpub.MAX_EPUB_BYTES)
-                                        output.write(buffer, 0, size)
-                                    }
-                                }
-                            } ?: error("No se pudo abrir el EPUB")
-                            val verses = NavarraEpub.parse(file)
-                            dao.replaceBible(verses)
-                            verses.size
-                        } finally { file.delete() }
-                    }
-                    message = "Navarra preparada: $imported referencias disponibles sin internet."
-                } catch (e: CancellationException) { throw e }
-                catch (_: Exception) { message = "No se pudo importar. Selecciona el EPUB de Navarra compatible (hasta 25 MB). La biblioteca anterior se conserva." }
-                finally { working = false }
-            }
-        }
+    LaunchedEffect(dao) {
+        working = true
+        message = "Preparando la Biblia de Navarra incluida…"
+        try {
+            BundledNavarra.prepare(context)
+            message = "Biblia de Navarra lista para buscar sin internet."
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) { message = "No se pudo preparar la Biblia incluida. Cierra y vuelve a abrir esta pantalla para reintentar." }
+        finally { working = false }
     }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(if (count == 0) "Importa una vez el EPUB de Navarra para buscar sin internet." else "Biblia de Navarra · $count referencias · Sin conexión",
+        Text(if (count == 0) "Biblia de Navarra incluida · Preparación automática" else "Biblia de Navarra · $count referencias · Sin conexión",
             style = MaterialTheme.typography.bodySmall)
-        OutlinedButton(enabled = enabled && !working, onClick = {
-            importer.launch(arrayOf("application/epub+zip", "application/zip", "application/octet-stream"))
-        }) { Text(if (count == 0) "Importar EPUB de Navarra" else "Volver a importar EPUB") }
         TextButton(enabled = enabled && !working && count > 0 && reference.isNotBlank(), onClick = {
             val request = BibleReference.parse(reference)
             if (request == null) {
@@ -76,7 +46,7 @@ fun NavarraBiblePanel(reference: String, enabled: Boolean, onResult: (String, St
                         val text = request.navarraText(rows)
                         if (text == null) message = "No se encontró la cita completa. Revisa la referencia y la numeración de Navarra."
                         else {
-                            onResult(text, "Sagrada Biblia · Universidad de Navarra · EUNSA\nEPUB local · ${request.query}")
+                            onResult(text, "Sagrada Biblia · Universidad de Navarra · EUNSA\nBiblia integrada · ${request.query}")
                             message = "Cita recuperada. Pulsa Guardar para conservarla en este tema."
                         }
                     } catch (e: CancellationException) { throw e }

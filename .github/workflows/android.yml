@@ -24,3 +24,13 @@ jobs:
           name: apk-notcatg-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Preparar herramientas para empaquetado personal
+        run: |
+          mkdir -p packaging-tools
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" packaging-tools/
+          cp "$ANDROID_HOME/build-tools/35.0.0/zipalign" packaging-tools/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-packaging-tools
+          path: packaging-tools/
+          if-no-files-found: error

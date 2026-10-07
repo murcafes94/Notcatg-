@@ -10,6 +10,7 @@ data class NavarraVerse(val book: String, val chapter: Int, val verse: String, v
 @Dao
 interface NavarraDao {
     @Query("SELECT COUNT(*) FROM verses") fun count(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM verses") suspend fun total(): Int
     @Query("SELECT * FROM verses WHERE book = :book AND chapter = :chapter AND verse IN (:numbers)")
     suspend fun find(book: String, chapter: Int, numbers: List<String>): List<NavarraVerse>
     @Insert suspend fun insert(verses: List<NavarraVerse>)
