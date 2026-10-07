@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +43,7 @@ fun ThematicIndexApp(dao: NoteDao) {
     var showResourceDialog by rememberSaveable { mutableStateOf(false) }
     var deleteTopic by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
+    var showBackup by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val topicFlow = remember(dao) { dao.topics() }
@@ -73,6 +75,9 @@ fun ThematicIndexApp(dao: NoteDao) {
         topBar = {
             TopAppBar(
                 title = { Text(selected?.name ?: "Índice temático") },
+                actions = {
+                    IconButton(onClick = { showBackup = true }) { Icon(Icons.Default.Settings, "Copias de seguridad") }
+                },
                 navigationIcon = {
                     if (selectedId != null) IconButton(onClick = { goBack() }) {
                         Icon(Icons.Default.ArrowBack, "Volver a los temas")
@@ -125,6 +130,7 @@ fun ThematicIndexApp(dao: NoteDao) {
             else dao.updateTopic(topic.copy(name = name, description = description))
         }
     }
+    if (showBackup) BackupDialog(dao, onDismiss = { showBackup = false })
     if (showResourceDialog && selected != null) {
         val topicId = selected.id
         ResourceDialog(null, saving, onDismiss = { showResourceDialog = false }) { resource ->
