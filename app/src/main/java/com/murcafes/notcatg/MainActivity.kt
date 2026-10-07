@@ -38,10 +38,14 @@ class MainActivity: ComponentActivity() {
 
  Scaffold(
   topBar={TopAppBar(
-   navigationIcon={if(selected!=null){{IconButton(onClick={selected=null;query=""}){Icon(Icons.Default.ArrowBack,"Volver")}}}else{{}}},
+   navigationIcon={
+    if(selected!=null) {
+     IconButton(onClick={selected=null;query=""}){Icon(Icons.Default.ArrowBack,"Volver")}
+    }
+   },
    title={Text(selected?.name ?: "Índice temático")}
   )},
-  floatingActionButton={FloatingActionButton(onClick={if(selected==null){{newTopic=true}}else{{newResource=true}}}){Icon(Icons.Default.Add,"Añadir")}}
+  floatingActionButton={FloatingActionButton(onClick={if(selected==null) { { newTopic=true } } else { { newResource=true } }}){Icon(Icons.Default.Add,"Añadir")}}
  ){pad->
   Column(Modifier.padding(pad).padding(16.dp)){
    if(selected==null){
