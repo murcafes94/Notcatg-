@@ -6,7 +6,7 @@ Aplicación Android nativa en Kotlin, Jetpack Compose y Room. Organiza citas y n
 
 1. Pulsa **+** para crear un tema, por ejemplo «Jóvenes en problemas con la fe».
 2. Abre el tema y pulsa **+** para añadir Biblia, Santo / Magisterio, Libro, Pensamiento o Nota propia.
-3. Guarda una referencia o título, el texto, la fuente y tus observaciones. Toca la referencia para desplegar el contenido.
+3. Guarda el texto, la fuente y, si quieres, una referencia o título. El comentario personal se despliega solo cuando lo necesitas. Puedes guardar sin referencia; la tarjeta muestra primero el autor o la fuente. Si no hay fuente, muestra la referencia o una vista previa del texto. Toca la referencia para desplegar el contenido.
 4. Usa **Editar** dentro de la cita o **Editar tema**. Los cambios mantienen el identificador, la fecha de creación y los favoritos.
 5. Busca por referencia, contenido, autor o nota personal; la búsqueda ignora mayúsculas y tildes. Combina tipo y favoritos.
 6. Las eliminaciones requieren confirmación. Eliminar un tema borra sus recursos en una sola transacción.
@@ -44,3 +44,7 @@ Pulsa el icono de ajustes en la barra superior y elige **Guardar respaldo**. En 
 Para recuperar un respaldo, pulsa **Abrir respaldo**, selecciona el JSON en Drive y revisa la cantidad de temas y recursos antes de pulsar **Restaurar**. La restauración combina el respaldo con los datos actuales en una transacción: no borra ni sobrescribe registros. Omite recursos idénticos, incluidos los de una segunda restauración del mismo archivo. Si un tema o recurso cambió desde el respaldo, conserva ambas versiones.
 
 Solo se aceptan respaldos de Notcatg de hasta 5 MB y 20.000 registros con versión y relaciones válidas. El archivo contiene tus notas en texto legible; guárdalo en tu propio Drive. No se necesitan credenciales de Google dentro de Notcatg ni permisos de acceso general al almacenamiento. Está pendiente probar el selector y la subida con Drive en un dispositivo real.
+
+## Diseño
+
+Paleta verde y pergamino, con variante oscura según el sistema. El formulario de recursos tiene botones fijos, tipos desplazables horizontalmente y espacio amplio para escribir. Orden: texto, fuente, referencia opcional y comentario plegable. Ocultar un comentario conserva su contenido. Se rechazan recursos sin texto, referencia ni comentario; una fuente sola no genera una tarjeta vacía. Los respaldos admiten los recursos sin referencia.

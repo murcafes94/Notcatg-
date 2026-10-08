@@ -20,6 +20,16 @@ import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.murcafes.notcatg.data.*
@@ -30,7 +40,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val dao = AppDatabase.get(this).noteDao()
-        setContent { MaterialTheme { ThematicIndexApp(dao) } }
+        setContent { NotcatgTheme { ThematicIndexApp(dao) } }
     }
 }
 
@@ -86,17 +96,18 @@ fun ThematicIndexApp(dao: NoteDao) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
+            ExtendedFloatingActionButton(onClick = {
                 if (selectedId == null) showTopicDialog = true
                 else if (selected != null) showResourceDialog = true
-            }) { Icon(Icons.Default.Add, if (selectedId == null) "Nuevo tema" else "Añadir cita") }
+            }, icon = { Icon(Icons.Default.Add, null) },
+                text = { Text(if (selectedId == null) "Nuevo tema" else "Añadir cita") })
         }
     ) { padding ->
         Column(Modifier.padding(padding).padding(horizontal = 16.dp).fillMaxSize()) {
             if (selectedId == null) {
                 OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(),
-                    label = { Text("Buscar temas") }, singleLine = true)
-                Text("${topics.size} temas · Tu colección personal de citas y notas",
+                    label = { Text("Buscar temas") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true)
+                Text("${topics.size} temas · Citas, lecturas y reflexiones",
                     Modifier.padding(vertical = 12.dp), style = MaterialTheme.typography.bodySmall)
                 if (filteredTopics.isEmpty()) Text(
                     if (query.isBlank()) "Crea tu primer tema con +." else "No hay temas que coincidan.")
@@ -104,10 +115,14 @@ fun ThematicIndexApp(dao: NoteDao) {
                     contentPadding = PaddingValues(bottom = 96.dp)) {
                     items(filteredTopics, key = { it.id }) { topic ->
                         Card(onClick = { selectedId = topic.id; query = "" },
-                            modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(18.dp)) {
-                                Text(topic.name, style = MaterialTheme.typography.titleMedium)
-                                if (topic.description.isNotBlank()) Text(topic.description)
+                            modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                            Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(topic.name, style = MaterialTheme.typography.titleLarge)
+                                    if (topic.description.isNotBlank()) Text(topic.description, maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Icon(Icons.Default.ChevronRight, "Abrir tema", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -160,7 +175,7 @@ fun TopicScreen(topic: Topic, dao: NoteDao, saving: Boolean,
         resources.filter { it.matches(query, type, favoritesOnly) }
     }
     OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(),
-        label = { Text("Buscar cita, texto, autor o nota") }, singleLine = true)
+        label = { Text("Buscar en este tema") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true)
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(selected = type.isEmpty(), onClick = { type = "" }, label = { Text("Todos") })
         RESOURCE_TYPES.forEach { item ->
@@ -184,7 +199,7 @@ fun TopicScreen(topic: Topic, dao: NoteDao, saving: Boolean,
         }
     }
     deleting?.let { resource ->
-        ConfirmDelete("Eliminar recurso", "¿Eliminar «${resource.reference}» de este tema?", saving,
+        ConfirmDelete("Eliminar recurso", "¿Eliminar «${resource.displayTitle()}» de este tema?", saving,
             onDismiss = { deleting = null }, onConfirm = {
                 onWrite({ deleting = null }, { dao.deleteResource(resource) })
             })
@@ -194,14 +209,15 @@ fun TopicScreen(topic: Topic, dao: NoteDao, saving: Boolean,
 @Composable
 fun ResourceCard(resource: Resource, saving: Boolean, onFavorite: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     var expanded by rememberSaveable(resource.id) { mutableStateOf(false) }
-    Card(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+    Card(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f)) {
-                    Text(resource.reference, style = MaterialTheme.typography.titleMedium)
-                    Text(resource.type, style = MaterialTheme.typography.labelMedium)
-                    Text(if (expanded) "Ocultar contenido" else "Toca para ver el contenido",
-                        style = MaterialTheme.typography.bodySmall)
+                    Text(resource.displayTitle(), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(listOf(resource.type, resource.reference.takeIf { it.isNotBlank() && resource.source.isNotBlank() }).filterNotNull().joinToString(" · "), Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(if (expanded) "Ocultar contenido" else "Ver contenido",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(enabled = !saving, onClick = onFavorite) {
                     Icon(if (resource.favorite) Icons.Default.Star else Icons.Outlined.StarBorder,
@@ -211,7 +227,7 @@ fun ResourceCard(resource: Resource, saving: Boolean, onFavorite: () -> Unit, on
             AnimatedVisibility(expanded) {
                 Column {
                     HorizontalDivider(Modifier.padding(vertical = 10.dp))
-                    if (resource.text.isNotBlank()) Text(resource.text)
+                    if (resource.text.isNotBlank()) Text(resource.text, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Serif)
                     if (resource.source.isNotBlank()) Text("Fuente: ${resource.source}", Modifier.padding(top = 6.dp))
                     if (resource.personalNote.isNotBlank()) Text("Nota personal: ${resource.personalNote}", Modifier.padding(top = 6.dp))
                     Row {
@@ -248,35 +264,69 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
     var body by rememberSaveable(original?.id) { mutableStateOf(original?.text ?: "") }
     var source by rememberSaveable(original?.id) { mutableStateOf(original?.source ?: "") }
     var note by rememberSaveable(original?.id) { mutableStateOf(original?.personalNote ?: "") }
-    AlertDialog(onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text(if (original == null) "Añadir cita o recurso" else "Editar recurso") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Tipo", style = MaterialTheme.typography.labelLarge)
-                RESOURCE_TYPES.forEach { item ->
-                    FilterChip(selected = type == item, enabled = !saving, onClick = { type = item }, label = { Text(item) })
-                }
-                OutlinedTextField(reference, { reference = it }, label = { Text("Referencia o título · ej. Mt 5,5") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
-                if (type == "Biblia") {
-                    NavarraBiblePanel(reference, enabled = !saving && body.isBlank()) { text, attribution ->
-                        body = text
-                        source = attribution
+    var showNote by rememberSaveable(original?.id) { mutableStateOf(note.isNotBlank()) }
+    Dialog(onDismissRequest = { if (!saving) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(modifier = Modifier.padding(horizontal = 12.dp).imePadding().navigationBarsPadding()
+            .widthIn(max = 680.dp).fillMaxWidth().fillMaxHeight(0.92f),
+            shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if (original == null) "Nuevo recurso" else "Editar recurso", style = MaterialTheme.typography.headlineSmall)
+                        Text("Guarda lo que te ayude a pensar y compartir", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (body.isNotBlank()) Text("Para consultar otra cita, vacía primero el texto. Se conserva el contenido actual.",
-                        style = MaterialTheme.typography.bodySmall)
+                    IconButton(enabled = !saving, onClick = onDismiss) { Icon(Icons.Default.Close, "Cerrar") }
                 }
-                OutlinedTextField(body, { body = it }, label = { Text("Texto / descripción") }, modifier = Modifier.fillMaxWidth(), minLines = 3, enabled = !saving)
-                OutlinedTextField(source, { source = it }, label = { Text("Fuente / autor / edición") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
-                OutlinedTextField(note, { note = it }, label = { Text("Nota personal") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
+                HorizontalDivider()
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("¿Qué quieres guardar?", style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        RESOURCE_TYPES.forEach { item ->
+                            FilterChip(selected = type == item, enabled = !saving, onClick = { type = item }, label = { Text(item) })
+                        }
+                    }
+                    OutlinedTextField(body, { body = it }, label = { Text("Texto de la cita o pensamiento") },
+                        modifier = Modifier.fillMaxWidth(), minLines = 4, enabled = !saving)
+                    OutlinedTextField(source, { source = it }, label = { Text("Fuente o autor (opcional)") },
+                        modifier = Modifier.fillMaxWidth(), enabled = !saving)
+                    OutlinedTextField(reference, { reference = it },
+                        label = { Text("Referencia o título (opcional)") },
+                        supportingText = { Text(if (type == "Biblia") "Ej. Mt 5,5 · Se usa para buscar en Navarra" else "Ej. título del libro, página o nombre de la cita") },
+                        modifier = Modifier.fillMaxWidth(), enabled = !saving)
+                    if (type == "Biblia") {
+                        NavarraBiblePanel(reference, enabled = !saving && body.isBlank()) { text, attribution ->
+                            body = text
+                            source = attribution
+                        }
+                        if (body.isNotBlank()) Text("Para buscar otra cita, vacía primero el texto.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    HorizontalDivider()
+                    TextButton(enabled = !saving, onClick = { showNote = !showNote }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(if (showNote) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (showNote) "Ocultar comentario personal" else if (note.isBlank()) "Añadir comentario personal" else "Ver comentario personal")
+                    }
+                    AnimatedVisibility(showNote) {
+                        OutlinedTextField(note, { note = it }, label = { Text("Tu comentario (opcional)") },
+                            modifier = Modifier.fillMaxWidth(), minLines = 3, enabled = !saving)
+                    }
+                }
+                HorizontalDivider()
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(enabled = !saving, onClick = onDismiss) { Text("Cancelar") }
+                    Button(modifier = Modifier.weight(1f), enabled = hasResourceContent(reference, body, note) && !saving, onClick = {
+                        val base = original ?: Resource(topicId = 0, reference = "")
+                        onSave(base.copy(type = type, reference = reference.trim(), text = body.trim(), source = source.trim(),
+                            personalNote = note.trim(), updatedAt = System.currentTimeMillis()))
+                    }) { Text(if (saving) "Guardando…" else "Guardar recurso") }
+                }
             }
-        },
-        confirmButton = { Button(enabled = reference.isNotBlank() && !saving, onClick = {
-            val base = original ?: Resource(topicId = 0, reference = "")
-            onSave(base.copy(type = type, reference = reference.trim(), text = body.trim(), source = source.trim(),
-                personalNote = note.trim(), updatedAt = System.currentTimeMillis()))
-        }) { Text(if (saving) "Guardando…" else "Guardar") } },
-        dismissButton = { TextButton(enabled = !saving, onClick = onDismiss) { Text("Cancelar") } })
-
+        }
+    }
 }
 
 @Composable

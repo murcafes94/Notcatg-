@@ -45,7 +45,7 @@ object BackupCodec {
         require(topics.all { it.id > 0 && it.name.isNotBlank() && it.createdAt >= 0 })
         require(topics.map { it.id }.distinct().size == topics.size)
         val topicIds = topics.map { it.id }.toSet()
-        require(resources.all { it.id > 0 && it.topicId in topicIds && it.reference.isNotBlank() && it.createdAt >= 0 && it.updatedAt >= 0 })
+        require(resources.all { it.id > 0 && it.topicId in topicIds && hasResourceContent(it.reference, it.text, it.personalNote) && it.createdAt >= 0 && it.updatedAt >= 0 })
         require(resources.map { it.id }.distinct().size == resources.size)
         return BackupData(topics, resources)
     }

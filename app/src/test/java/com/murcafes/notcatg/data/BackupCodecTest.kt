@@ -13,6 +13,18 @@ class BackupCodecTest {
         assertEquals(sample, BackupCodec.decode(BackupCodec.encode(sample)))
         assertEquals(BackupData(emptyList(), emptyList()), BackupCodec.decode(BackupCodec.encode(BackupData(emptyList(), emptyList()))))
     }
+    @Test fun restoresTextAndCommentWithoutReference() {
+        listOf(
+            sample.resources.single().copy(reference = "", personalNote = ""),
+            sample.resources.single().copy(reference = "", text = "", personalNote = "Mi reflexión")
+        ).forEach { resource ->
+            val data = sample.copy(resources = listOf(resource))
+            assertEquals(data, BackupCodec.decode(BackupCodec.encode(data)))
+        }
+        val empty = sample.copy(resources = listOf(sample.resources.single().copy(reference = " ", text = "", personalNote = "")))
+        try { BackupCodec.decode(BackupCodec.encode(empty)); fail("Aceptó un recurso sin contenido") }
+        catch (expected: IllegalArgumentException) { }
+    }
     @Test fun rejectsOrphansDuplicateIdsAndUnsupportedVersions() {
         val invalid = listOf(
             BackupCodec.encode(sample.copy(topics = emptyList())),
