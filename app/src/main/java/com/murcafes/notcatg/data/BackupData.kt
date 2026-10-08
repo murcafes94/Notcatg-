@@ -17,7 +17,7 @@ object BackupCodec {
         put("resources", JSONArray().apply { data.resources.forEach { resource -> put(JSONObject().apply {
             put("id", resource.id); put("topicId", resource.topicId); put("type", resource.type)
             put("reference", resource.reference); put("text", resource.text); put("source", resource.source)
-            put("personalNote", resource.personalNote); put("favorite", resource.favorite)
+            put("importance", resource.importance); put("personalNote", resource.personalNote); put("favorite", resource.favorite)
             put("createdAt", resource.createdAt); put("updatedAt", resource.updatedAt)
         }) } })
     }.toString(2)
@@ -40,12 +40,12 @@ object BackupCodec {
             require(item.get("favorite") is Boolean)
             Resource(item.getLong("id"), item.getLong("topicId"), item.getString("type"), item.getString("reference"),
                 item.getString("text"), item.getString("source"), item.getString("personalNote"), item.getBoolean("favorite"),
-                item.getLong("createdAt"), item.getLong("updatedAt"))
+                item.getLong("createdAt"), item.getLong("updatedAt"), item.optString("importance", ""))
         }
         require(topics.all { it.id > 0 && it.name.isNotBlank() && it.createdAt >= 0 })
         require(topics.map { it.id }.distinct().size == topics.size)
         val topicIds = topics.map { it.id }.toSet()
-        require(resources.all { it.id > 0 && it.topicId in topicIds && hasResourceContent(it.reference, it.text, it.personalNote) && it.createdAt >= 0 && it.updatedAt >= 0 })
+        require(resources.all { it.importance in listOf("", "low", "medium", "high") && it.id > 0 && it.topicId in topicIds && hasResourceContent(it.reference, it.text, it.personalNote) && it.createdAt >= 0 && it.updatedAt >= 0 })
         require(resources.map { it.id }.distinct().size == resources.size)
         return BackupData(topics, resources)
     }

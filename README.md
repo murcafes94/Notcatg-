@@ -33,7 +33,7 @@ GitHub Actions ejecuta estas verificaciones en `main` y en las solicitudes de ca
 
 ## Datos y límites actuales
 
-La base actual es `notcatg.db`, versión 2, con tablas `topics` y `resources`. Este cambio mantiene ese esquema y elimina la opción de reiniciarlo automáticamente ante una migración ausente. La antigua aplicación de apuntes utilizaba `notes.db`; su importación no está implementada y ese archivo no se borra. La sincronización automática entre dispositivos aún no está implementada.
+La base actual es `notcatg.db`, versión 3, con tablas `topics` y `resources`. La migración desde la versión 2 añade únicamente la columna de importancia y conserva los registros existentes. Este cambio mantiene las tablas y elimina la opción de reiniciarlo automáticamente ante una migración ausente. La antigua aplicación de apuntes utilizaba `notes.db`; su importación no está implementada y ese archivo no se borra. La sincronización automática entre dispositivos aún no está implementada.
 
 Las pruebas unitarias cubren la búsqueda por los distintos campos y la combinación de filtros. Compilación y lint no sustituyen una prueba de uso en un teléfono o tablet.
 
@@ -48,3 +48,7 @@ Solo se aceptan respaldos de Notcatg de hasta 5 MB y 20.000 registros con versi�
 ## Diseño
 
 Paleta verde y pergamino, con variante oscura según el sistema. El formulario de recursos tiene botones fijos, tipos desplazables horizontalmente y espacio amplio para escribir. Orden: texto, fuente, referencia opcional y comentario plegable. Ocultar un comentario conserva su contenido. Se rechazan recursos sin texto, referencia ni comentario; una fuente sola no genera una tarjeta vacía. Los respaldos admiten los recursos sin referencia.
+
+En **Configuración** elige entre siete paletas: verde/pergamino, lila/turquesa, turquesa/oliva, menta/coral, océano, coral/arena y rosa/melocotón. Cada una tiene versiones clara y oscura; puedes seguir el sistema o fijar el modo. La selección se aplica en directo y se conserva al cerrar la app. Desde esa misma pantalla se accede a los respaldos.
+
+Las tarjetas admiten una importancia opcional: baja (azul), media (amarillo) o alta (coral). Se muestra un borde y una etiqueta, para no depender solo del color. Los recursos actuales quedan sin marca y los respaldos antiguos se pueden restaurar.

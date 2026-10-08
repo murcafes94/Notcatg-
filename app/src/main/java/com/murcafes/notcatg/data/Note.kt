@@ -1,5 +1,6 @@
 package com.murcafes.notcatg.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -22,5 +23,6 @@ data class Resource(
  val personalNote: String = "",
  val favorite: Boolean = false,
  val createdAt: Long = System.currentTimeMillis(),
- val updatedAt: Long = System.currentTimeMillis()
+ val updatedAt: Long = System.currentTimeMillis(),
+ @ColumnInfo(defaultValue = "''") val importance: String = ""
 )

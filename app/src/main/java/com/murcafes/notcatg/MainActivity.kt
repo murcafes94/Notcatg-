@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,13 +43,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val dao = AppDatabase.get(this).noteDao()
-        setContent { NotcatgTheme { ThematicIndexApp(dao) } }
+        val preferences = getSharedPreferences("appearance", MODE_PRIVATE)
+        setContent {
+            var palette by rememberSaveable { mutableStateOf(preferences.getString("palette", "parchment") ?: "parchment") }
+            var mode by rememberSaveable { mutableStateOf(preferences.getString("mode", "system") ?: "system") }
+            NotcatgTheme(palette, mode) {
+                ThematicIndexApp(dao, palette, mode,
+                    onPalette = { palette = it; preferences.edit().putString("palette", it).apply() },
+                    onMode = { mode = it; preferences.edit().putString("mode", it).apply() })
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ThematicIndexApp(dao: NoteDao) {
+fun ThematicIndexApp(dao: NoteDao, paletteId: String, mode: String, onPalette: (String) -> Unit, onMode: (String) -> Unit) {
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var showTopicDialog by rememberSaveable { mutableStateOf(false) }
@@ -54,6 +66,7 @@ fun ThematicIndexApp(dao: NoteDao) {
     var deleteTopic by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var showBackup by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val topicFlow = remember(dao) { dao.topics() }
@@ -86,7 +99,7 @@ fun ThematicIndexApp(dao: NoteDao) {
             TopAppBar(
                 title = { Text(selected?.name ?: "Índice temático") },
                 actions = {
-                    IconButton(onClick = { showBackup = true }) { Icon(Icons.Default.Settings, "Copias de seguridad") }
+                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.Settings, "Configuración") }
                 },
                 navigationIcon = {
                     if (selectedId != null) IconButton(onClick = { goBack() }) {
@@ -145,6 +158,8 @@ fun ThematicIndexApp(dao: NoteDao) {
             else dao.updateTopic(topic.copy(name = name, description = description))
         }
     }
+    if (showSettings) SettingsDialog(paletteId, mode, onPalette, onMode,
+        onBackups = { showSettings = false; showBackup = true }, onDismiss = { showSettings = false })
     if (showBackup) BackupDialog(dao, onDismiss = { showBackup = false })
     if (showResourceDialog && selected != null) {
         val topicId = selected.id
@@ -209,11 +224,20 @@ fun TopicScreen(topic: Topic, dao: NoteDao, saving: Boolean,
 @Composable
 fun ResourceCard(resource: Resource, saving: Boolean, onFavorite: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     var expanded by rememberSaveable(resource.id) { mutableStateOf(false) }
+    val importanceColor = importanceColor(resource.importance)
     Card(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth(),
+        border = importanceColor?.let { BorderStroke(2.dp, it) },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(Modifier.weight(1f)) {
+                    if (importanceColor != null) {
+                        Surface(color = importanceColor.copy(alpha = 0.15f), shape = MaterialTheme.shapes.small) {
+                            Text("Importancia ${importanceLabel(resource.importance).lowercase()}", Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall, color = importanceColor)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                    }
                     Text(resource.displayTitle(), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(listOf(resource.type, resource.reference.takeIf { it.isNotBlank() && resource.source.isNotBlank() }).filterNotNull().joinToString(" · "), Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Text(if (expanded) "Ocultar contenido" else "Ver contenido",
@@ -264,6 +288,7 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
     var body by rememberSaveable(original?.id) { mutableStateOf(original?.text ?: "") }
     var source by rememberSaveable(original?.id) { mutableStateOf(original?.source ?: "") }
     var note by rememberSaveable(original?.id) { mutableStateOf(original?.personalNote ?: "") }
+    var importance by rememberSaveable(original?.id) { mutableStateOf(original?.importance ?: "") }
     var showNote by rememberSaveable(original?.id) { mutableStateOf(note.isNotBlank()) }
     Dialog(onDismissRequest = { if (!saving) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -304,6 +329,17 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
                         if (body.isNotBlank()) Text("Para buscar otra cita, vacía primero el texto.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Text("Importancia (opcional)", style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("", "low", "medium", "high").forEach { level ->
+                            val color = importanceColor(level)
+                            FilterChip(selected = importance == level, enabled = !saving, onClick = { importance = level },
+                                label = { Text(importanceLabel(level)) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = color?.copy(alpha = 0.18f) ?: MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = color ?: MaterialTheme.colorScheme.onSecondaryContainer))
+                        }
+                    }
                     HorizontalDivider()
                     TextButton(enabled = !saving, onClick = { showNote = !showNote }, modifier = Modifier.fillMaxWidth()) {
                         Icon(if (showNote) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
@@ -321,7 +357,7 @@ fun ResourceDialog(original: Resource?, saving: Boolean, onDismiss: () -> Unit, 
                     Button(modifier = Modifier.weight(1f), enabled = hasResourceContent(reference, body, note) && !saving, onClick = {
                         val base = original ?: Resource(topicId = 0, reference = "")
                         onSave(base.copy(type = type, reference = reference.trim(), text = body.trim(), source = source.trim(),
-                            personalNote = note.trim(), updatedAt = System.currentTimeMillis()))
+                            personalNote = note.trim(), importance = importance, updatedAt = System.currentTimeMillis()))
                     }) { Text(if (saving) "Guardando…" else "Guardar recurso") }
                 }
             }

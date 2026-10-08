@@ -7,11 +7,16 @@ class BackupCodecTest {
     private val sample = BackupData(
         listOf(Topic(id = 4, name = "Oración", description = "Jóvenes", createdAt = 100)),
         listOf(Resource(id = 8, topicId = 4, type = "Biblia", reference = "Mt 5,4", text = "Texto de prueba\nSegunda línea",
-            source = "Fuente de prueba", personalNote = "Mi nota", favorite = true, createdAt = 100, updatedAt = 200)))
+            source = "Fuente de prueba", personalNote = "Mi nota", favorite = true, createdAt = 100, updatedAt = 200, importance = "high")))
 
     @Test fun roundTripPreservesAllFieldsAndUnicode() {
         assertEquals(sample, BackupCodec.decode(BackupCodec.encode(sample)))
         assertEquals(BackupData(emptyList(), emptyList()), BackupCodec.decode(BackupCodec.encode(BackupData(emptyList(), emptyList()))))
+    }
+    @Test fun olderBackupsDefaultToNoImportanceColor() {
+        val json = org.json.JSONObject(BackupCodec.encode(sample))
+        json.getJSONArray("resources").getJSONObject(0).remove("importance")
+        assertEquals("", BackupCodec.decode(json.toString()).resources.single().importance)
     }
     @Test fun restoresTextAndCommentWithoutReference() {
         listOf(
